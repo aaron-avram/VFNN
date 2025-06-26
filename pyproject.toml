@@ -10,7 +10,9 @@ dependencies = [
     "pytest",
     "scipy",
     "torch",
-    "pylint"
+    "pylint",
+    "arch",
+    "ccxt"
 ]
 
 [tool.setuptools]

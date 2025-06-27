@@ -13,7 +13,8 @@ dependencies = [
     "torch",
     "pylint",
     "arch",
-    "ccxt"
+    "ccxt",
+    "yfinance"
 ]
 
 [tool.setuptools]

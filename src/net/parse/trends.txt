@@ -1,0 +1,47 @@
+advertising & marketing 
+air travel 
+auto buyers 
+auto financing 
+business & industrial 
+bankruptcy 
+computers & electronics 
+credit cards 
+durable goods 
+education 
+finance & investing 
+financial planning 
+furniture 
+insurance 
+jobs 
+luxury goods 
+mobile & wireless 
+mortgage 
+real estate 
+rental 
+shopping 
+small business 
+travel 
+--------
+advert
+airtvl
+autoby
+autofi
+bizind
+bnkrpt
+comput
+crcard
+durble
+educat
+invest
+finpln
+furntr
+insur
+jobs
+luxury
+mobile
+mrtge
+rlest
+rental
+shop
+smallbiz
+travel

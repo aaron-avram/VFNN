@@ -6,9 +6,10 @@ from pathlib import Path
 import time
 from datetime import datetime, timedelta
 from pytrends.request import TrendReq
+import pytrends
 import pandas as pd
 
-def get_daily_trends_5yrs_single(keyword, overlap=30):
+def get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:
     pytrends = TrendReq(hl='en-US', tz=360) # Create request object
     end = datetime.today()
     start = end - timedelta(days=5*365)
@@ -35,16 +36,16 @@ def get_daily_trends_5yrs_single(keyword, overlap=30):
             print(f"Failed to fetch {tf}: {e}")
 
         cur_start += delta
-        time.sleep(1)
+        time.sleep(10)
     dfs = normalize_windows(dfs, overlap)
     data = pd.concat(dfs)
     data = data[~data.index.duplicated(keep='first')]
 
     return data
 
-def get_weekly_trends_single(keyword, overlap=1):
+def get_weekly_trends_single(keyword, overlap=1) -> pd.DataFrame:
     pytrends = TrendReq(hl='en-US', tz=360) # Req object
-    end = datetime.today() - timedelta(days=(5-overlap)*365)
+    end = datetime.today().date() - timedelta(days=(5-overlap)*365)
     start = datetime(2004, 1, 1) # When google trends started
 
     tf = f"{start.strftime('%Y-%m-%d')} {end.strftime('%Y-%m-%d')}"
@@ -60,25 +61,28 @@ def get_weekly_trends_single(keyword, overlap=1):
 def total_trends(keyword, daily_overlap=30, year_overlap=1):
     full_daily = get_daily_trends_5yrs_single(keyword, daily_overlap)
     inter_daily = get_weekly_trends_single(keyword, year_overlap)
-    inter_daily = _normalize_overlapping(inter_daily, full_daily, year_overlap * 365)
+    inter_daily = _normalize_overlapping(full_daily, inter_daily, year_overlap * 365)
 
-    value1 = datetime.today() - timedelta(days=(5 - year_overlap) * 365)
+    value1 = inter_daily.index.max() - timedelta(days=(year_overlap) * 365)
     value2 = value1 - timedelta(days=1)
+
     combined_df = pd.concat([
-        inter_daily.loc[:value2.strftime('%Y-%m-%d')],
-        full_daily.loc[value1.strftime('%Y-%m-%d'):]
+        inter_daily.loc[:value2].copy(),
+        full_daily.loc[value1:].copy()
     ])
 
+    combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
     return combined_df
 
-def save_trend_to_csv(df: pd.DataFrame, keyword: str, output_dir: str="../data/trends") -> None:
+def save_trend_to_csv(df: pd.DataFrame, keyword: str, output_dir: str="../../../data/trends") -> None:
     output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # Assuming df has a single unnamed column
     df.columns = [keyword]
 
-    file_path = output_dir + '/' + keyword + '.csv'
-    df.to_csv(file_path)
+    file_path = output_path /  f"{keyword}.csv"
+    df.to_csv(file_path, index_label="date")
 
 
 def _normalize_overlapping(window1: pd.DataFrame, window2: pd.DataFrame, overlap=30) -> pd.DataFrame:
@@ -103,6 +107,8 @@ def normalize_windows(windows: list[pd.DataFrame], overlap=30) -> pd.DataFrame:
 
 # For testing
 if __name__ == '__main__':
-    keyword = 'bankruptcy'
-    df = total_trends(keyword)
-    save_trend_to_csv(df, keyword)
+    keywords = ['mobile', 'software', 'hardware', 'investing', 'manufacturing', 'business news']
+    for _keyword in keywords:
+        _df = total_trends(_keyword)
+        save_trend_to_csv(_df, _keyword)
+        print("Done: ", _keyword)

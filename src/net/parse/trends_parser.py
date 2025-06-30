@@ -6,7 +6,6 @@ from pathlib import Path
 import time
 from datetime import datetime, timedelta
 from pytrends.request import TrendReq
-import pytrends
 import pandas as pd
 
 def get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:

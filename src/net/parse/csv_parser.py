@@ -1,4 +1,3 @@
-from functools import reduce
 from pathlib import Path
 import pandas as pd
 
@@ -21,9 +20,10 @@ def interpolate_df(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataF
 
     # Interpolate
     df = df.interpolate('linear')
-    df = df.reset_index().rename(columns={'index': 'date'})
 
     return df
 
 def merge_on_date(dfs: list[pd.DataFrame]) -> pd.DataFrame:
-    return reduce(lambda x, y: pd.merge(x, y, on='date', how='outer'), dfs)
+    dfs = [df.set_index('date') for df in dfs]
+    merged = pd.concat(dfs, axis=1, join='outer')
+    return merged.reset_index()

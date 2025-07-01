@@ -16,14 +16,14 @@ def _downsample(df: pd.DataFrame, start: int = 1, delta: int=3) -> torch.Tensor:
     VIX_COL = df.columns.get_loc('volatility')
     RET_COL = df.columns.get_loc('returns')
     for i in range(new_size):
-        chunk = numerics[start + delta * i: start + delta * (i + 1)]
+        chunk = torch.tensor(numerics[start + delta * i: start + delta * (i + 1)])
         for j in range(features):
             if j == VIX_COL:
-                out[i, j] = np.sqrt(chunk[:, j])
+                out[i, j] = torch.sqrt(torch.sum(chunk[:, j] ** 2))
             elif j == RET_COL:
-                out[i, j] = np.sum(chunk[:, j])
+                out[i, j] = torch.sum(chunk[:, j])
             else:
-                out[i, j] = np.mean(chunk[:, j])
+                out[i, j] = torch.mean(chunk[:, j])
     return out
 
 def _normalize(tensor: torch.Tensor, k: int | float = float('inf')):
@@ -43,10 +43,10 @@ def _normalize(tensor: torch.Tensor, k: int | float = float('inf')):
     return new
 
 def _rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tensor]:
-    data = tensor.unfold(dimension=0, size=context)
+    data = tensor.unfold(dimension=0, size=context, step=1).permute(0, 2, 1)
     targets = tensor[context:, -2] # Get volatility (a bit clumsy)
 
-    return data, targets
+    return data[:-1], targets
 
 def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, k: int = float('inf'), context: int = 10) -> tuple[torch.Tensor]:
     downsampled = _downsample(_merge(trends, stats), delta)

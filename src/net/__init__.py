@@ -2,7 +2,7 @@
 Init file for the net class
 """
 from .modules import VFNN, torch, nn
-from .train import sgd
-from .loss import MAE, MAPE
+from .train import sgd, adam
+from .loss import MAE, MAPE, RMSE
 
-__all__ = ["VFNN", "sgd", "torch", "nn", "MAE", "MAPE"]
+__all__ = ["VFNN", "sgd", "adam", "torch", "nn", "MAE", "MAPE", "RMSE"]

@@ -49,7 +49,7 @@ class BatchNorm1D(nn.Module):
     """
     Batchnorm with respect to a single axis
     """
-    def __init__(self, num_features, _momentum=0.9):
+    def __init__(self, num_features, _momentum=0.8):
         super().__init__()
         self.running_mu = torch.ones((num_features,))
         self.running_var = torch.zeros((num_features,))
@@ -89,20 +89,14 @@ class LSTM(nn.Module):
     def __init__(self, in_size, hidden_size, training=True):
         super().__init__()
         self.cell = Cell(in_size, hidden_size)
-        if self.training: # Batch mode
-            self.initial_hidden = torch.zeros((1, hidden_size))
-            self.initial_mem = torch.zeros((1, hidden_size))
-        else:
-            self.initial_hidden = torch.zeros(hidden_size)
-            self.initial_mem = torch.zeros(hidden_size)
-        
-        self.in_batchnorm = BatchNorm1D(in_size)
-        self.hidden_batchnorm = BatchNorm1D(hidden_size)
+        self.hidden_size =hidden_size
         self.training = training
     
     def forward(self, inp: torch.Tensor):
-        hidden = self.initial_hidden
-        mem = self.initial_mem
+        batch_size = inp.shape[0]
+        hidden = torch.zeros(batch_size, self.hidden_size, device=inp.device)
+        mem = torch.zeros_like(hidden)
+
         if inp.ndim == 2:
             channels = inp.shape[0]
         elif inp.ndim == 3:
@@ -111,19 +105,13 @@ class LSTM(nn.Module):
             raise ValueError
         
         for t in range(channels):
-            # Ensure no batchnorm bugs
-            if self.training != self.in_batchnorm.training:
-                self.in_batchnorm.training = self.training
-            if self.training != self.hidden_batchnorm.training:
-                self.hidden_batchnorm.training = self.training
 
             # Deal with dimension cases
             if inp.ndim == 2:
-                x = self.in_batchnorm(inp[t, :])
+                x = inp[t, :]
             else:
-                x = self.in_batchnorm(inp[:, t, :])
+                x = inp[:, t, :]
             # Cell update
-            hidden = self.hidden_batchnorm(hidden)
             hidden, mem = self.cell(x, hidden, mem)
         return hidden
 
@@ -136,13 +124,12 @@ class MLP(nn.Module):
         self.layers = nn.Sequential()
         for l1, l2 in zip(size, size[1:]):
             self.layers.append(nn.Linear(l1, l2))
-            self.layers.append(nn.Tanh())
-            nn.Dropout(0.5)
+            self.layers.append(nn.ReLU())
         self.layers.pop(-1)
         self.training=training
     
     def forward(self, inp):
-        return self.layers.forward(inp)
+        return self.layers.forward(inp).squeeze()
 
 class VFNN(nn.Module):
     """
@@ -159,3 +146,4 @@ class VFNN(nn.Module):
 
     def forward(self, inp: torch.Tensor) -> torch.Tensor:
         return self.blocks.forward(inp)
+    

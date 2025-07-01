@@ -9,8 +9,16 @@ def MAE(preds: torch.Tensor, acc: torch.Tensor):
     """
     return torch.abs(preds - acc).mean()
 
-def MAPE(preds: torch.Tensor, acc: torch.Tensor):
+def MAPE(preds: torch.Tensor, acc: torch.Tensor, mean: torch.Tensor, std: torch.Tensor):
     """
     Mean absolute percentage error
     """
-    return 100 * torch.abs((preds - acc) / acc).mean()
+    preds = preds.flatten() * std + mean
+    acc = acc.flatten() * std + mean
+    return 100 * torch.abs((preds - acc) / (acc + preds)).mean()
+
+def RMSE(preds, targets):
+    """
+    Root mean squared error
+    """
+    return torch.sqrt(torch.mean((targets - preds)**2))

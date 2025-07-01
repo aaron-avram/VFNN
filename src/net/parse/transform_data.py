@@ -25,21 +25,11 @@ def _downsample(df: pd.DataFrame, start: int = 1, delta: int=3) -> torch.Tensor:
                 out[i, j] = torch.mean(chunk[:, j])
     return out
 
-def _normalize(tensor: torch.Tensor, k: int | float = float('inf')):
-    if k == float('inf'):
-        mean = tensor.mean(dim=0, keepdim=True)
-        std = tensor.std(dim=0, keepdim=True) + 1e-12
-        new = (tensor - mean) / std
-    else:
-        new = torch.zeros_like(tensor)
-        for i in range(0, tensor.shape[0], k):
-            end = min(i + k, tensor.shape[0])
-            cur = tensor[i:end, :] # Alias for convenience
-            mean = cur.mean(dim=0, keepdim=True)
-            std = cur.std(dim=0, keepdim=True) + 1e-12
-
-            new[i:end, :] = (cur - mean) / std
-    return new
+def _normalize(tensor: torch.Tensor):
+    mean = tensor.mean(dim=0, keepdim=True)
+    std = tensor.std(dim=0, keepdim=True) + 1e-12
+    new = (tensor - mean) / std
+    return new, mean, std
 
 def _rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tensor]:
     data = tensor.unfold(dimension=0, size=context, step=1).permute(0, 2, 1)
@@ -47,21 +37,19 @@ def _rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tens
 
     return data[:-1], targets
 
-def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, k: int = float('inf'), context: int = 10) -> tuple[torch.Tensor]:
+def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, context: int = 10) -> tuple[torch.Tensor]:
     downsampled = _downsample(_merge(trends, stats), delta)
 
     # Split
     b1 = int(downsampled.shape[0] * 0.8)
-    b2 = int(downsampled.shape[0] * 0.9)
-    splits = (downsampled[:b1], downsampled[b1:b2], downsampled[b2:])
-    normed = list(map(lambda x: _normalize(x, k), splits))
+    splits = (downsampled[:b1], downsampled[b1:])
 
     # build splits
-    x_train, y_train = _rolling_window(normed[0], context)
-    x_test, y_test = _rolling_window(normed[1], context)
-    x_dev, y_dev = _rolling_window(normed[2], context)
+    train_temp, mean, std = _normalize(splits[0])
+    x_train, y_train = _rolling_window(train_temp, context)
+    x_test, y_test = _rolling_window((splits[1] - mean) / std, context)
 
-    return x_train, y_train, x_test, y_test, x_dev, y_dev
+    return x_train, y_train, x_test, y_test, mean, std
 
 if __name__ == '__main__':
     path = Path('../../../data/trends')

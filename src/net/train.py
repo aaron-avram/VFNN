@@ -17,13 +17,8 @@ def sgd(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tenso
         logits = model.forward(x_batch)
         loss = loss_func(logits, y_batch)
 
-        l2_lambda = 1e-4
-        l2_penalty = torch.tensor(0.0)
         for param in model.parameters():
             param.grad = None
-            l2_penalty += (param * param).sum()
-
-        loss = loss + l2_lambda * l2_penalty
 
         loss.backward()
         lossi.append(loss.log10().item())
@@ -40,12 +35,12 @@ def sgd(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tenso
             print(f"Loss: {loss.item()} on step: {step + 1}")
     return lossi
 
-def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tensor, batch_size: int = 30, steps: int = 1000):
+def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tensor, lr=1e-3, lambda_=1e-5, batch_size: int = 30, steps: int = 1000):
     """
     Perform adam for model
     """
     lossi = []
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=lambda_)
     for step in range(steps):
         idx = torch.randint(0, len(xs), (batch_size,))
         x_batch, y_batch = xs[idx], ys[idx]
@@ -58,7 +53,7 @@ def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tens
         optimizer.step()
 
         lossi.append(loss.item())
-        
+
         if step % 100 == 0:
             print(f"Loss: {loss.item()} on step: {step + 1}")
     return lossi

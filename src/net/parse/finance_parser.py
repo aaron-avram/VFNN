@@ -12,6 +12,7 @@ def get_data(start: str = '2004-01-01', end: str = '2025-06-29'):
 
     vol, retr = _calc_stats(close, high, low, opn)
 
+
     df = pd.DataFrame({
         'date': daily.index,
         'volatility': vol,
@@ -20,13 +21,13 @@ def get_data(start: str = '2004-01-01', end: str = '2025-06-29'):
     df = interpolate_df(df, start, end)
     return df
 
-def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame, SCALE=1e4) -> pd.DataFrame:
+def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame, scale=1e6) -> pd.DataFrame:
     u = np.log(np.divide(high, opn))
     d = np.log(np.divide(low, opn))
     c = np.log(np.divide(close, opn))
 
-    vol = (0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2)) * SCALE
-    retr = np.log(close[1:] / close[:-1]) * 1e2
+    vol = (0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2)) * scale
+    retr = np.log(close[1:] / close[:-1]) * scale
     retr = np.insert(retr, 0, 0) # For shape alignment
 
     return vol, retr

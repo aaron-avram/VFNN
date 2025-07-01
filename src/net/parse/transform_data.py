@@ -5,10 +5,10 @@ import torch
 from net.parse.csv_parser import merge_on_date, parse_path
 from net.parse.finance_parser import get_data
 
-def merge(trends: pd.DataFrame, stats: pd.DataFrame) -> pd.DataFrame:
+def _merge(trends: pd.DataFrame, stats: pd.DataFrame) -> pd.DataFrame:
     return pd.merge(trends, stats, how='outer', on='date')
 
-def downsample(df: pd.DataFrame, start: int = 1, delta: int=3) -> torch.Tensor:
+def _downsample(df: pd.DataFrame, start: int = 1, delta: int=3) -> torch.Tensor:
     new_size = (len(df) - start) // delta
     features = df.shape[1] - 1
     out = torch.zeros(new_size, features)
@@ -26,7 +26,7 @@ def downsample(df: pd.DataFrame, start: int = 1, delta: int=3) -> torch.Tensor:
                 out[i, j] = np.mean(chunk[:, j])
     return out
 
-def normalize(tensor: torch.Tensor, k: int | float = float('inf')):
+def _normalize(tensor: torch.Tensor, k: int | float = float('inf')):
     if k == float('inf'):
         mean = tensor.mean(dim=0, keepdim=True)
         std = tensor.std(dim=0, keepdim=True) + 1e-12
@@ -42,25 +42,25 @@ def normalize(tensor: torch.Tensor, k: int | float = float('inf')):
             new[i:end, :] = (cur - mean) / std
     return new
 
-def rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tensor]:
+def _rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tensor]:
     data = tensor.unfold(dimension=0, size=context)
     targets = tensor[context:, -2] # Get volatility (a bit clumsy)
 
     return data, targets
 
 def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, k: int = float('inf'), context: int = 10) -> tuple[torch.Tensor]:
-    downsampled = downsample(merge(trends, stats), delta)
+    downsampled = _downsample(_merge(trends, stats), delta)
 
     # Split
     b1 = int(downsampled.shape[0] * 0.8)
     b2 = int(downsampled.shape[0] * 0.9)
     splits = (downsampled[:b1], downsampled[b1:b2], downsampled[b2:])
-    normed = list(map(lambda x: normalize(x, k), splits))
+    normed = list(map(lambda x: _normalize(x, k), splits))
 
     # build splits
-    x_train, y_train = rolling_window(normed[0], context)
-    x_test, y_test = rolling_window(normed[1], context)
-    x_dev, y_dev = rolling_window(normed[2], context)
+    x_train, y_train = _rolling_window(normed[0], context)
+    x_test, y_test = _rolling_window(normed[1], context)
+    x_dev, y_dev = _rolling_window(normed[2], context)
 
     return x_train, y_train, x_test, y_test, x_dev, y_dev
 
@@ -69,5 +69,5 @@ if __name__ == '__main__':
     path_data = parse_path(path)
     _trends = merge_on_date(path_data)
     _stats = get_data()
-    _data = merge(_trends, _stats)
-    tens = downsample(_data)
+    _data = _merge(_trends, _stats)
+    tens = _downsample(_data)

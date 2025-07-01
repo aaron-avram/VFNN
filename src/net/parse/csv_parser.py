@@ -7,11 +7,11 @@ def parse_path(path: Path) -> list[pd.DataFrame]:
     end_date = '2025-06-29'
     for f in path.glob('*.csv'):
         df = pd.read_csv(f)
-        df = interpolate_df(df, start_date, end_date)
+        df = _interpolate_df(df, start_date, end_date)
         dfs.append(df)
     return dfs
 
-def interpolate_df(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
+def _interpolate_df(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
     df['date'] = pd.to_datetime(df['date']) # Ensure dates are in datetime format
     df.set_index('date') # Set date as index for interpolation
 

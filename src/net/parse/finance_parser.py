@@ -10,7 +10,7 @@ def get_data(start: str = '2001-01-01', end: str = datetime.today().date().strft
     high = np.array(daily[['High']]).flatten()
     low = np.array(daily[['Low']]).flatten()
 
-    vol, retr = calc_stats(close, high, low, opn)
+    vol, retr = _calc_stats(close, high, low, opn)
 
     df = pd.DataFrame({
         'date': daily.index,
@@ -19,7 +19,7 @@ def get_data(start: str = '2001-01-01', end: str = datetime.today().date().strft
     })
     return df
 
-def calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame) -> pd.DataFrame:
+def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame) -> pd.DataFrame:
     u = np.log(np.divide(high, opn))
     d = np.log(np.divide(low, opn))
     c = np.log(np.divide(close, opn))

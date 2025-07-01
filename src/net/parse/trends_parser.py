@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pytrends.request import TrendReq
 import pandas as pd
 
-def get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:
+def _get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:
     pytrends = TrendReq(hl='en-US', tz=360) # Create request object
     end = datetime.today()
     start = end - timedelta(days=5*365)
@@ -36,13 +36,13 @@ def get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:
 
         cur_start += delta
         time.sleep(10)
-    dfs = normalize_windows(dfs, overlap)
+    dfs = _normalize_windows(dfs, overlap)
     data = pd.concat(dfs)
     data = data[~data.index.duplicated(keep='first')]
 
     return data
 
-def get_weekly_trends_single(keyword, overlap=1) -> pd.DataFrame:
+def _get_weekly_trends_single(keyword, overlap=1) -> pd.DataFrame:
     pytrends = TrendReq(hl='en-US', tz=360) # Req object
     end = datetime.today().date() - timedelta(days=(5-overlap)*365)
     start = datetime(2004, 1, 1) # When google trends started
@@ -58,8 +58,8 @@ def get_weekly_trends_single(keyword, overlap=1) -> pd.DataFrame:
     return daily_df
 
 def total_trends(keyword, daily_overlap=30, year_overlap=1):
-    full_daily = get_daily_trends_5yrs_single(keyword, daily_overlap)
-    inter_daily = get_weekly_trends_single(keyword, year_overlap)
+    full_daily = _get_daily_trends_5yrs_single(keyword, daily_overlap)
+    inter_daily = _get_weekly_trends_single(keyword, year_overlap)
     inter_daily = _normalize_overlapping(full_daily, inter_daily, year_overlap * 365)
 
     value1 = inter_daily.index.max() - timedelta(days=(year_overlap) * 365)
@@ -94,7 +94,7 @@ def _normalize_overlapping(window1: pd.DataFrame, window2: pd.DataFrame, overlap
     ratio = (m1 / (m2 + 1e-12)).values[0]
     return window2 * ratio
 
-def normalize_windows(windows: list[pd.DataFrame], overlap=30) -> pd.DataFrame:
+def _normalize_windows(windows: list[pd.DataFrame], overlap=30) -> pd.DataFrame:
     """
     Mutate the dataframes in the list so that they are all normalized with respect
     to the first window

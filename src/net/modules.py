@@ -158,5 +158,4 @@ class VFNN(nn.Module):
         self.training = training
 
     def forward(self, inp: torch.Tensor) -> torch.Tensor:
-        logits = self.blocks.forward(inp)
-        return nn.Softplus(logits) # Ensure positivity
+        return self.blocks.forward(inp)

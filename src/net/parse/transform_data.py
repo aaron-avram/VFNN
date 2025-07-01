@@ -1,6 +1,5 @@
 from pathlib import Path
 import pandas as pd
-import numpy as np
 import torch
 from net.parse.csv_parser import merge_on_date, parse_path
 from net.parse.finance_parser import get_data
@@ -70,4 +69,5 @@ if __name__ == '__main__':
     _trends = merge_on_date(path_data)
     _stats = get_data()
     _data = _merge(_trends, _stats)
+    print(_data[:100])
     tens = _downsample(_data)

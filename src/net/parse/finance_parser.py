@@ -1,9 +1,9 @@
-from datetime import datetime
 import yfinance as yf
 import pandas as pd
 import numpy as np
+from net.parse.csv_parser import interpolate_df
 
-def get_data(start: str = '2001-01-01', end: str = datetime.today().date().strftime('%Y-%m-%d')):
+def get_data(start: str = '2004-01-01', end: str = '2025-06-29'):
     daily = yf.download(tickers='^SPX', start=start, end=end, interval='1d')
     close = np.array(daily[['Close']]).flatten()
     opn = np.array(daily[['Open']]).flatten()
@@ -17,18 +17,19 @@ def get_data(start: str = '2001-01-01', end: str = datetime.today().date().strft
         'volatility': vol,
         'returns': retr
     })
+    df = interpolate_df(df, start, end)
     return df
 
-def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame) -> pd.DataFrame:
+def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame, SCALE=1e4) -> pd.DataFrame:
     u = np.log(np.divide(high, opn))
     d = np.log(np.divide(low, opn))
     c = np.log(np.divide(close, opn))
 
-    vol = 0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2)
-    retr = np.log(close[1:] / close[:-1])
-    retr = np.insert(retr, 0, np.nan) # For shape alignment
+    vol = (0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2)) * SCALE
+    retr = np.log(close[1:] / close[:-1]) * 1e2
+    retr = np.insert(retr, 0, 0) # For shape alignment
 
     return vol, retr
 
 if __name__ == '__main__':
-    get_data()
+    print(get_data())

@@ -3,9 +3,14 @@ Loss functions for models
 """
 import torch
 
+def MAE(preds: torch.Tensor, acc: torch.Tensor):
+    """
+    Mean absolute error
+    """
+    return torch.abs(preds - acc).mean()
+
 def MAPE(preds: torch.Tensor, acc: torch.Tensor):
     """
     Mean absolute percentage error
     """
-    percentage = torch.abs((preds - acc) / (acc + 1e-12))
-    return percentage.mean()
+    return 100 * torch.abs((preds - acc) / acc).mean()

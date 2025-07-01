@@ -39,3 +39,26 @@ def sgd(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tenso
         if step % 100 == 0:
             print(f"Loss: {loss.item()} on step: {step + 1}")
     return lossi
+
+def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tensor, batch_size: int = 30, steps: int = 1000):
+    """
+    Perform adam for model
+    """
+    lossi = []
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    for step in range(steps):
+        idx = torch.randint(0, len(xs), (batch_size,))
+        x_batch, y_batch = xs[idx], ys[idx]
+
+        optimizer.zero_grad()
+        preds = model(x_batch)
+        loss = loss_func(preds, y_batch)
+
+        loss.backward()
+        optimizer.step()
+
+        lossi.append(loss.item())
+        
+        if step % 100 == 0:
+            print(f"Loss: {loss.item()} on step: {step + 1}")
+    return lossi

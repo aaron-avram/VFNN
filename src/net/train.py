@@ -5,7 +5,7 @@ File containing all of the training functions
 import torch
 import torch.nn as nn
 
-def sgd(model: nn.Module, xs: torch.Tensor, ys: torch.Tensor, lr: float = 0.1, batch_size: int = 30, steps: int = 1000):
+def sgd(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tensor, lr: float = 0.1, batch_size: int = 30, steps: int = 1000):
     """
     Perform stochastic gradient descent on model
     """
@@ -15,7 +15,7 @@ def sgd(model: nn.Module, xs: torch.Tensor, ys: torch.Tensor, lr: float = 0.1, b
         x_batch, y_batch = xs[idx], ys[idx]
 
         logits = model.forward(x_batch)
-        loss = nn.functional.cross_entropy(logits, y_batch)
+        loss = loss_func(logits, y_batch)
 
         l2_lambda = 1e-4
         l2_penalty = torch.tensor(0.0)

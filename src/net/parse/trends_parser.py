@@ -35,7 +35,7 @@ def _get_daily_trends_5yrs_single(keyword, overlap=30) -> pd.DataFrame:
             print(f"Failed to fetch {tf}: {e}")
 
         cur_start += delta
-        time.sleep(10)
+        time.sleep(1)
     dfs = _normalize_windows(dfs, overlap)
     data = pd.concat(dfs)
     data = data[~data.index.duplicated(keep='first')]
@@ -106,7 +106,7 @@ def _normalize_windows(windows: list[pd.DataFrame], overlap=30) -> pd.DataFrame:
 
 # For testing
 if __name__ == '__main__':
-    keywords = ['computer & electronics', 'finance & investing', 'mobile & wireless', 'business & industrial']
+    keywords = ['finance']
     for _keyword in keywords:
         _df = total_trends(_keyword)
         save_trend_to_csv(_df, _keyword)

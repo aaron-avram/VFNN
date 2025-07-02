@@ -5,54 +5,15 @@ A file containing all of the project's network modules
 import torch
 import torch.nn as nn
 
-class Gate(nn.Module):
-    """
-    A gate in an LSTM cell
-    """
-    def __init__(self, in_size, hidden_size):
-        super().__init__()
-        self.in_weight = nn.Parameter(torch.randn((in_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(in_size)))
-        self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
-        self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
-        self.act = torch.sigmoid
-    
-    def forward(self, x_inp, hidden_inp):
-        unact = hidden_inp @ self.hidden_weight + x_inp @ self.in_weight + self.bias
-        return self.act(unact)
-    
-class Cell(nn.Module):
-    """
-    An LSTM cell
-    """
-    def __init__(self, in_size, hidden_size):
-        super().__init__()
-        self.forget_gate = Gate(in_size, hidden_size)
-        self.input_gate = Gate(in_size, hidden_size)
-        self.out_gate = Gate(in_size, hidden_size)
-        self.inp_weight = nn.Parameter(torch.randn((in_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(in_size)))
-        self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
-        self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
-    
-    def forward(self, x_inp, hidden_inp, memory_inp):
-        forget_gate = self.forget_gate(x_inp, hidden_inp)
-        input_gate = self.input_gate(x_inp, hidden_inp)
-        out_gate = self.out_gate(x_inp, hidden_inp)
-
-
-        candidate_mem = torch.tanh(hidden_inp @ self.hidden_weight + x_inp @ self.inp_weight + self.bias)
-        new_mem = forget_gate * memory_inp + input_gate * candidate_mem
-        new_output = out_gate * torch.tanh(new_mem)
-        return (new_output, new_mem)
-    
 # Feature dim is always last dim
 class BatchNorm1D(nn.Module):
     """
     Batchnorm with respect to a single axis
     """
-    def __init__(self, num_features, _momentum=0.8):
+    def __init__(self, num_features, _momentum=0.9):
         super().__init__()
-        self.running_mu = torch.ones((num_features,))
-        self.running_var = torch.zeros((num_features,))
+        self.running_mu = torch.zeros((num_features,))
+        self.running_var = torch.ones((num_features,))
         self.gamma = nn.Parameter(torch.ones((num_features,), requires_grad=True))
         self.beta = nn.Parameter(torch.zeros((num_features,), requires_grad=True))
         self.momentum = _momentum
@@ -63,7 +24,7 @@ class BatchNorm1D(nn.Module):
         if self.training:
             shape = tuple(range(0, ndims))
             mu = torch.mean(inp, dim=shape, keepdim=True)
-            var = torch.var(inp, dim=shape, keepdim=True, correction=0.0)
+            var = torch.var(inp, dim=shape, keepdim=True, unbiased=False)
         else:
             mu = self.running_mu.view(*([1] * ndims), c)
             var = self.running_var.view(*([1] * ndims), c)
@@ -81,6 +42,50 @@ class BatchNorm1D(nn.Module):
             self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var.squeeze()
         
         return x_new
+
+class Gate(nn.Module):
+    """
+    A gate in an LSTM cell
+    """
+    def __init__(self, in_size, hidden_size):
+        super().__init__()
+        self.in_weight = nn.Parameter(torch.randn((in_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(in_size)))
+        self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
+        self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
+        self.act = torch.sigmoid
+        self.in_batchnorm = BatchNorm1D(hidden_size)
+        self.hidden_batchnorm = BatchNorm1D(hidden_size)
+    
+    def forward(self, x_inp, hidden_inp):
+        hidden = self.hidden_batchnorm(hidden_inp @ self.hidden_weight)
+        x = self.in_batchnorm(x_inp @ self.in_weight)
+        unact = hidden + x + self.bias
+        return self.act(unact)
+    
+class Cell(nn.Module):
+    """
+    An LSTM cell
+    """
+    def __init__(self, in_size, hidden_size):
+        super().__init__()
+        self.forget_gate = Gate(in_size, hidden_size)
+        self.input_gate = Gate(in_size, hidden_size)
+        self.out_gate = Gate(in_size, hidden_size)
+        self.inp_weight = nn.Parameter(torch.randn((in_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(in_size)))
+        self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
+        self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
+        self.mem_batchnorm = BatchNorm1D(hidden_size)
+    
+    def forward(self, x_inp, hidden_inp, memory_inp):
+        forget_gate = self.forget_gate(x_inp, hidden_inp)
+        input_gate = self.input_gate(x_inp, hidden_inp)
+        out_gate = self.out_gate(x_inp, hidden_inp)
+
+
+        candidate_mem = torch.tanh(self.mem_batchnorm(hidden_inp @ self.hidden_weight + x_inp @ self.inp_weight + self.bias))
+        new_mem = forget_gate * memory_inp + input_gate * candidate_mem
+        new_output = out_gate * torch.tanh(new_mem)
+        return (new_output, new_mem)
 
 class LSTM(nn.Module):
     """
@@ -124,7 +129,11 @@ class MLP(nn.Module):
         self.layers = nn.Sequential()
         for l1, l2 in zip(size, size[1:]):
             self.layers.append(nn.Linear(l1, l2))
+            self.layers.append(BatchNorm1D(l2))
             self.layers.append(nn.ReLU())
+            self.layers.append(nn.Dropout(0.2))
+        self.layers.pop(-1)
+        self.layers.pop(-1)
         self.layers.pop(-1)
         self.training=training
     

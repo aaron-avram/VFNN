@@ -41,8 +41,8 @@ def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, contex
     downsampled = _downsample(_merge(trends, stats), delta)
 
     # Split
-    b1 = int(downsampled.shape[0] * 0.2)
-    splits = (downsampled[b1:], downsampled[:b1])
+    b1 = int(downsampled.shape[0] * 0.7)
+    splits = (downsampled[:b1], downsampled[b1:])
 
     # build splits
     train_temp, mean, std = _normalize(splits[0])

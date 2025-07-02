@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from net.parse.csv_parser import interpolate_df
 
-def get_data(start: str = '2004-01-01', end: str = '2025-06-29'):
+def get_data(start: str = '2004-10-19', end: str = '2015-07-24'):
     daily = yf.download(tickers='^SPX', start=start, end=end, interval='1d')
     close = np.array(daily[['Close']]).flatten()
     opn = np.array(daily[['Open']]).flatten()
@@ -19,6 +19,7 @@ def get_data(start: str = '2004-01-01', end: str = '2025-06-29'):
         'returns': retr
     })
     df = interpolate_df(df, start, end)
+    df.fillna(0, inplace=True)
     return df
 
 def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn: pd.DataFrame, scale=1e6) -> pd.DataFrame:

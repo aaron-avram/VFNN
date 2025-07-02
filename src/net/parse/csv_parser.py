@@ -3,12 +3,11 @@ import pandas as pd
 
 def parse_path(path: Path) -> list[pd.DataFrame]:
     dfs = []
-    start_date = '2004-01-01'
-    end_date = '2025-06-29'
+    start_date = '2004-10-19'
+    end_date = '2015-07-25'
     for f in path.glob('*.csv'):
         df = pd.read_csv(f)
         df['date'] = pd.to_datetime(df['date'])
-        df[df.columns[1]] = df[df.columns[1]]
         df = interpolate_df(df, start_date, end_date)
         dfs.append(df)
     return dfs
@@ -16,6 +15,7 @@ def parse_path(path: Path) -> list[pd.DataFrame]:
 def interpolate_df(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
     df['date'] = pd.to_datetime(df['date']) # Ensure dates are in datetime format
     df = df.set_index('date') # Set date as index for interpolation
+    df = df[start_date:end_date]
 
     full_index = pd.date_range(start_date, end_date, freq='D') # What to interpolate to
     df = df.reindex(full_index) # Add missing indices

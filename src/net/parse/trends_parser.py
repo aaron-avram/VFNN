@@ -106,7 +106,7 @@ def _normalize_windows(windows: list[pd.DataFrame], overlap=30) -> pd.DataFrame:
 
 # For testing
 if __name__ == '__main__':
-    keywords = ['mobile', 'software', 'hardware', 'investing', 'manufacturing', 'business news']
+    keywords = ['computer & electronics', 'finance & investing', 'mobile & wireless', 'business & industrial']
     for _keyword in keywords:
         _df = total_trends(_keyword)
         save_trend_to_csv(_df, _keyword)

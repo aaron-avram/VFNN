@@ -33,7 +33,7 @@ def _normalize(tensor: torch.Tensor):
 
 def _rolling_window(tensor: torch.Tensor, context: int = 10) -> tuple[torch.Tensor]:
     data = tensor.unfold(dimension=0, size=context, step=1).permute(0, 2, 1)
-    targets = tensor[context:, -2] # Get volatility (a bit clumsy)
+    targets = tensor[context-1:-1, -2] # Get volatility (a bit clumsy)
 
     return data[:-1], targets
 

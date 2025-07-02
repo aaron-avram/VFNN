@@ -53,13 +53,9 @@ class Gate(nn.Module):
         self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
         self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
         self.act = torch.sigmoid
-        self.in_batchnorm = BatchNorm1D(hidden_size)
-        self.hidden_batchnorm = BatchNorm1D(hidden_size)
     
     def forward(self, x_inp, hidden_inp):
-        hidden = self.hidden_batchnorm(hidden_inp @ self.hidden_weight)
-        x = self.in_batchnorm(x_inp @ self.in_weight)
-        unact = hidden + x + self.bias
+        unact = hidden_inp @ self.hidden_weight + x_inp @ self.in_weight + self.bias
         return self.act(unact)
     
 class Cell(nn.Module):
@@ -74,15 +70,13 @@ class Cell(nn.Module):
         self.inp_weight = nn.Parameter(torch.randn((in_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(in_size)))
         self.hidden_weight = nn.Parameter(torch.randn((hidden_size, hidden_size), requires_grad=True) / torch.sqrt(torch.tensor(hidden_size)))
         self.bias = nn.Parameter(torch.zeros((hidden_size,), requires_grad=True))
-        self.mem_batchnorm = BatchNorm1D(hidden_size)
     
     def forward(self, x_inp, hidden_inp, memory_inp):
         forget_gate = self.forget_gate(x_inp, hidden_inp)
         input_gate = self.input_gate(x_inp, hidden_inp)
         out_gate = self.out_gate(x_inp, hidden_inp)
 
-
-        candidate_mem = torch.tanh(self.mem_batchnorm(hidden_inp @ self.hidden_weight + x_inp @ self.inp_weight + self.bias))
+        candidate_mem = torch.tanh(hidden_inp @ self.hidden_weight + x_inp @ self.inp_weight + self.bias)
         new_mem = forget_gate * memory_inp + input_gate * candidate_mem
         new_output = out_gate * torch.tanh(new_mem)
         return (new_output, new_mem)
@@ -129,11 +123,7 @@ class MLP(nn.Module):
         self.layers = nn.Sequential()
         for l1, l2 in zip(size, size[1:]):
             self.layers.append(nn.Linear(l1, l2))
-            self.layers.append(BatchNorm1D(l2))
             self.layers.append(nn.ReLU())
-            self.layers.append(nn.Dropout(0.2))
-        self.layers.pop(-1)
-        self.layers.pop(-1)
         self.layers.pop(-1)
         self.training=training
     

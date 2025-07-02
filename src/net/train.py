@@ -41,6 +41,7 @@ def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tens
     """
     lossi = []
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=lambda_)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99995)
     for step in range(steps):
         idx = torch.randint(0, len(xs), (batch_size,))
         x_batch, y_batch = xs[idx], ys[idx]
@@ -53,6 +54,8 @@ def adam(model: nn.Module, loss_func: callable, xs: torch.Tensor, ys: torch.Tens
         optimizer.step()
 
         lossi.append(loss.item())
+
+        scheduler.step()
 
         if step % 100 == 0:
             print(f"Loss: {loss.item()} on step: {step + 1}")

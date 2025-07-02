@@ -15,6 +15,8 @@ def MAPE(preds: torch.Tensor, acc: torch.Tensor, mean: torch.Tensor, std: torch.
     """
     preds = preds.flatten() * std + mean
     acc = acc.flatten() * std + mean
+    torch.clamp(acc, min=1e-3)
+    torch.clamp(preds, min=1e-3)
     return 100 * torch.abs((preds - acc) / (torch.abs(acc))).mean()
 
 def RMSE(preds, targets):

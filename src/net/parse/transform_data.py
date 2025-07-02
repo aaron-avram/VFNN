@@ -42,12 +42,13 @@ def build_data(trends: pd.DataFrame, stats: pd.DataFrame, delta: int = 3, contex
 
     # Split
     b1 = int(downsampled.shape[0] * 0.7)
-    splits = (downsampled[:b1], downsampled[b1:])
+    train_raw = downsampled[:b1]
+    test_raw = downsampled[b1 - context + 1:]
 
     # build splits
-    train_temp, mean, std = _normalize(splits[0])
+    train_temp, mean, std = _normalize(train_raw)
     x_train, y_train = _rolling_window(train_temp, context)
-    x_test, y_test = _rolling_window((splits[1] - mean) / std, context)
+    x_test, y_test = _rolling_window((test_raw - mean) / std, context)
 
     return x_train, y_train, x_test, y_test, mean, std
 

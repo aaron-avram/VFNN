@@ -33,16 +33,5 @@ def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn:
 
     return vol, retr
 
-def get_data_GARCH(start: str = '2004-10-19', end: str = '2015-07-24'):
-    daily = yf.download(tickers='^SPX', start=start, end=end, interval='1d')
-    close = np.array(daily[['Close']]).flatten()
-    opn = np.array(daily[['Open']]).flatten()
-    high = np.array(daily[['High']]).flatten()
-    low = np.array(daily[['Low']]).flatten()
-
-    vol, retr = _calc_stats(close, high, low, opn)
-
-    return vol[1:], retr[1:]
-
 if __name__ == '__main__':
     print(get_data())

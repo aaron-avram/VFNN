@@ -27,11 +27,11 @@ def _calc_stats(close: pd.DataFrame, high: pd.DataFrame, low: pd.DataFrame, opn:
     d = np.log(np.divide(low, opn))
     c = np.log(np.divide(close, opn))
 
-    vol = (0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2))
-    retr = np.log(close[1:] / close[:-1])
+    vol = (0.511 * ((u - d)**2) - 0.019 * (c * (u + d) - 2 * u * d) - 0.383 * (c ** 2)) * scale
+    retr = np.log(close[1:] / close[:-1]) * scale
     retr = np.insert(retr, 0, 0) # For shape alignment
 
     return vol, retr
 
 if __name__ == '__main__':
-    print(get_data_garch())
+    print(get_data())

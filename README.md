@@ -16,7 +16,7 @@ It is interesting that the model does not directly predict the price or the retu
 The model was built with PyTorch and trained on trends data from the PyTrends api and financial data from the yfinance api. Most of the work was in the hyperparameter tuning and normalization strategies for the data, as financial data can be quite difficult to work with in machine learning contexts.
 
 ## Takeaways
-I was very happy with the results, I outperformed the paper on root mean squared error by three orders of magnitude and mean absolute percent error by eleven percent. Although, I suspect this is becuase I spent a lot of time regularizing and tuning my model, whereas the main focus of the paper was on displaying the effectivness of the model architecture and dataset selection in comparison to unsupervised and recursive algorithms.
+I was very happy with the results, I outperformed the paper on root mean squared error by three orders of magnitude and mean absolute percent error by eleven percent. Although, I suspect this is because I spent a lot of time regularizing and tuning my model, whereas the main focus of the paper was on displaying the effectivness of the model architecture and dataset selection in comparison to unsupervised and recursive algorithms.
 
 ## Acknowledgments
 
